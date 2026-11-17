@@ -2,20 +2,23 @@ package org.example.gmailapplication.repository;
 
 import org.example.gmailapplication.entity.Email;
 import org.example.gmailapplication.enums.EmailFolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface EmailRepository extends JpaRepository<Email, Long> {
 
-    List<Email> findByUserIdAndFolderOrderByCreatedAtDesc(Long userId, EmailFolder folder);
+    Page<Email> findByUserId(Long userId, Pageable pageable);
 
-    List<Email> findByUserIdAndIsStarredTrueAndFolderNotOrderByCreatedAtDesc(Long userId, EmailFolder folder);
+    Page<Email> findByUserIdAndIsStarredTrue(Long userId, Pageable pageable);
 
-    Optional<Email> findByIdAndUserId(Long id, Long userId);
+    Page<Email> findByUserIdAndFolder(Long userId, EmailFolder folder, Pageable pageable);
 
     long countByUserIdAndFolderAndIsReadFalse(Long userId, EmailFolder folder);
+
+    long countByUserIdAndIsStarredTrue(Long userId);
+
+    long countByUserIdAndFolder(Long userId, EmailFolder folder);
 }

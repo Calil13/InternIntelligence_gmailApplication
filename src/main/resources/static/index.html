@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gmail Application</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0b57d0;
+            --primary-bg: #c2e7ff;
+            --text-main: #1f1f1f;
+            --text-secondary: #444746;
+            --bg-body: #f6f8fc;
+            --bg-card: #ffffff;
+            --sidebar-hover: #eaebef;
+            --sidebar-active: #d3e3fd;
+            --star-color: #f4b400;
+            --border-color: #e0e0e0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            background-color: var(--bg-body);
+            border-bottom: 1px solid var(--border-color);
+            height: 64px;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            min-width: 250px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: background 0.2s;
+        }
+
+        .icon-btn:hover {
+            background-color: rgba(60, 64, 67, 0.08);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .logo .material-icons {
+            color: #ea4335;
+            font-size: 28px;
+        }
+
+        .header-center {
+            flex: 1;
+            max-width: 720px;
+            margin: 0 20px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background-color: #eaf1fb;
+            border-radius: 28px;
+            padding: 6px 16px;
+            transition: all 0.2s;
+        }
+
+        .search-box:focus-within {
+            background-color: #ffffff;
+            box-shadow: 0 1px 3px 0 rgba(60,64,67,0.3);
+        }
+
+        .search-box input {
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 100%;
+            margin-left: 12px;
+            font-size: 16px;
+            color: var(--text-main);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        .user-selector input {
+            width: 50px;
+            padding: 2px 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Backdrop overlay for mobile / open sidebar */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: 80;
+            transition: opacity 0.3s;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        /* Yan Menyu (Kənardan açılan naviqasiya paneli) */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-body);
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            gap: 6px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 90;
+            flex-shrink: 0;
+        }
+
+        /* Kənara yığılmış (closed) vəziyyət */
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+            position: absolute;
+            height: 100%;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.15);
+            background: #fff;
+        }
+
+        @media (max-width: 850px) {
+            .sidebar {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                transform: translateX(-100%);
+                box-shadow: 2px 0 12px rgba(0,0,0,0.2);
+                background: #fff;
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+        }
+
+        .compose-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background-color: var(--primary-bg);
+            color: #001d35;
+            padding: 16px 24px;
+            border-radius: 16px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            transition: box-shadow 0.2s, background-color 0.2s;
+            width: fit-content;
+        }
+
+        .compose-btn:hover {
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            background-color: #b5dffc;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.15s;
+            user-select: none;
+        }
+
+        .nav-item-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-item .material-icons {
+            font-size: 20px;
+        }
+
+        .nav-item:hover {
+            background-color: var(--sidebar-hover);
+        }
+
+        .nav-item.active {
+            background-color: var(--sidebar-active);
+            color: #001d35;
+            font-weight: 700;
+        }
+
+        .nav-badge {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            margin: 0 16px 16px 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .content-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .content-header .view-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .emails-list-container {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .email-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            border-bottom: 1px solid #f1f3f4;
+            cursor: pointer;
+            transition: background 0.15s;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .email-row:hover {
+            background-color: #f7f9fc;
+            box-shadow: inset 1px 0 0 #dadce0, inset -1px 0 0 #dadce0, 0 1px 2px 0 rgba(60,64,67,0.3);
+        }
+
+        .email-row.unread {
+            font-weight: 700;
+            background-color: #fff;
+        }
+
+        .star-icon {
+            color: #c4c7c5;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s, transform 0.15s;
+        }
+
+        .star-icon:hover {
+            transform: scale(1.15);
+        }
+
+        .star-icon.starred {
+            color: var(--star-color);
+        }
+
+        .email-sender {
+            width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-main);
+        }
+
+        .email-snippet {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            gap: 8px;
+        }
+
+        .email-subject {
+            color: var(--text-main);
+        }
+
+        .email-body-preview {
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .email-date {
+            width: 80px;
+            text-align: right;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: var(--text-secondary);
+            gap: 12px;
+        }
+
+        .empty-state .material-icons {
+            font-size: 48px;
+            color: #dadce0;
+        }
+
+        /* Modal Dialogs */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #fff;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            background: #f2f6fc;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        .modal-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .modal-body input, .modal-body textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .modal-body textarea {
+            height: 150px;
+            resize: vertical;
+        }
+
+        .modal-footer {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background-color: #eaebef;
+            color: var(--text-main);
+        }
+
+        /* Message Detail Viewer */
+        .detail-view {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .detail-subject {
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .detail-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .detail-body {
+            font-size: 15px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            color: var(--text-main);
+            padding-top: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="header-left">
+            <button class="icon-btn" id="toggleSidebarBtn" title="Yan menyu">
+                <span class="material-icons">menu</span>
+            </button>
+            <div class="logo" onclick="switchView('INBOX')">
+                <span class="material-icons">mail</span>
+                <span>Gmail</span>
+            </div>
+        </div>
+
+        <div class="header-center">
+            <div class="search-box">
+                <span class="material-icons" style="color: var(--text-secondary);">search</span>
+                <input type="text" id="searchInput" placeholder="Məktublarda axtarış...">
+            </div>
+        </div>
+
+        <div class="header-right">
+            <div class="user-selector" title="Cari istifadəçi ID-si">
+                <span class="material-icons" style="font-size: 18px; color: var(--primary);">person</span>
+                <span>User ID:</span>
+                <input type="number" id="userIdInput" value="1" min="1" onchange="loadCurrentView()">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Overlay for sidebar on small screens or slide out -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+        <!-- Yan Menyu: Menyu seçimlərini özündə birləşdirən, kənardan açılan naviqasiya paneli -->
+        <aside class="sidebar" id="sidebar">
+            <button class="compose-btn" onclick="openComposeModal()">
+                <span class="material-icons">edit</span>
+                <span>Yeni məktub</span>
+            </button>
+
+            <nav class="nav-menu">
+                <div class="nav-item active" id="nav-INBOX" onclick="switchView('INBOX')">
+                    <div class="nav-item-left">
+                        <span class="material-icons">inbox</span>
+                        <span>Gələnlər</span>
+                    </div>
+                    <span class="nav-badge" id="badge-inbox">0</span>
+                </div>
+
+                <!-- Ulduzlu məktublar menyu bəndi -->
+                <div class="nav-item" id="nav-STARRED" onclick="switchView('STARRED')">
+                    <div class="nav-item-left">
+                        <span class="material-icons" style="color: var(--star-color);">star</span>
+                        <span>Ulduzlu məktublar</span>
+                    </div>
+                    <span class="nav-badge" id="badge-starred">0</span>
+                </div>
+
+                <div class="nav-item" id="nav-SENT" onclick="switchView('SENT')">
+                    <div class="nav-item-left">
+                        <span class="material-icons">send</span>
+                        <span>Göndərilənlər</span>
+                    </div>
+                    <span class="nav-badge" id="badge-sent">0</span>
+                </div>
+
+                <div class="nav-item" id="nav-DRAFT" onclick="switchView('DRAFT')">
+                    <div class="nav-item-left">
+                        <span class="material-icons">drafts</span>
+                        <span>Qaralamalar</span>
+                    </div>
+                    <span class="nav-badge" id="badge-draft">0</span>
+                </div>
+
+                <div class="nav-item" id="nav-TRASH" onclick="switchView('TRASH')">
+                    <div class="nav-item-left">
+                        <span class="material-icons">delete</span>
+                        <span>Zibil qutusu</span>
+                    </div>
+                    <span class="nav-badge" id="badge-trash">0</span>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area: Siyahı və Səhifələr -->
+        <main class="content">
+            <div class="content-header">
+                <div class="view-title" id="viewTitle">
+                    <span class="material-icons">inbox</span>
+                    <span>Gələnlər qutusu</span>
+                </div>
+                <div>
+                    <button class="icon-btn" onclick="loadCurrentView()" title="Yenilə">
+                        <span class="material-icons">refresh</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Email List / Siyahı -->
+            <div class="emails-list-container" id="emailsListContainer">
+                <!-- Javascript will render emails here -->
+            </div>
+
+            <!-- Single Email Viewer -->
+            <div class="detail-view" id="emailDetailView" style="display: none;">
+                <div class="detail-header">
+                    <div>
+                        <button class="btn btn-secondary" onclick="backToList()" style="margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                            <span class="material-icons" style="font-size: 16px;">arrow_back</span> Geri
+                        </button>
+                        <h2 class="detail-subject" id="detailSubject"></h2>
+                    </div>
+                    <span class="material-icons star-icon" id="detailStarIcon" style="font-size: 28px;">star_border</span>
+                </div>
+                <div class="detail-meta">
+                    <div><strong>Kimdən:</strong> <span id="detailSender"></span></div>
+                    <div><strong>Kimə:</strong> <span id="detailRecipient"></span></div>
+                    <div><strong>Tarix:</strong> <span id="detailDate"></span></div>
+                </div>
+                <div class="detail-body" id="detailBody"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Compose Modal -->
+    <div class="modal" id="composeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Yeni Məktub</span>
+                <button class="icon-btn" onclick="closeComposeModal()"><span class="material-icons">close</span></button>
+            </div>
+            <div class="modal-body">
+                <input type="email" id="composeRecipient" placeholder="Kimə (recipient email)...">
+                <input type="text" id="composeSubject" placeholder="Mövzu...">
+                <textarea id="composeBody" placeholder="Məktubun mətni..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="saveDraft()">Qaralama saxla</button>
+                <button class="btn btn-primary" onclick="sendEmail()">Göndər</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentView = 'INBOX'; // 'INBOX', 'STARRED', 'SENT', 'DRAFT', 'TRASH'
+        let cachedEmails = [];
+
+        // Sidebar toggle logic (Yan menyunun kənardan açılması/bağlanması)
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const toggleBtn = document.getElementById('toggleSidebarBtn');
+
+        toggleBtn.addEventListener('click', () => {
+            if (window.innerWidth <= 850) {
+                sidebar.classList.toggle('mobile-open');
+                overlay.classList.toggle('active');
+            } else {
+                sidebar.classList.toggle('collapsed');
+            }
+        });
+
+        function closeSidebar() {
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        }
+
+        function getUserId() {
+            return document.getElementById('userIdInput').value || 1;
+        }
+
+        // Switch active tab/view
+        function switchView(view) {
+            currentView = view;
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const activeNav = document.getElementById(`nav-${view}`);
+            if (activeNav) activeNav.classList.add('active');
+
+            // Set Header Title
+            const viewTitle = document.getElementById('viewTitle');
+            if (view === 'STARRED') {
+                viewTitle.innerHTML = `<span class="material-icons" style="color: var(--star-color);">star</span> <span>Ulduzlu məktublar</span>`;
+            } else if (view === 'INBOX') {
+                viewTitle.innerHTML = `<span class="material-icons">inbox</span> <span>Gələnlər qutusu</span>`;
+            } else if (view === 'SENT') {
+                viewTitle.innerHTML = `<span class="material-icons">send</span> <span>Göndərilənlər</span>`;
+            } else if (view === 'DRAFT') {
+                viewTitle.innerHTML = `<span class="material-icons">drafts</span> <span>Qaralamalar</span>`;
+            } else if (view === 'TRASH') {
+                viewTitle.innerHTML = `<span class="material-icons">delete</span> <span>Zibil qutusu</span>`;
+            }
+
+            backToList();
+            loadCurrentView();
+            closeSidebar();
+        }
+
+        // Load emails based on current view
+        async function loadCurrentView() {
+            const userId = getUserId();
+            loadSidebarSummary(userId);
+
+            const container = document.getElementById('emailsListContainer');
+            container.innerHTML = '<div class="empty-state"><p>Yüklənir...</p></div>';
+
+            try {
+                let url = '';
+                if (currentView === 'STARRED') {
+                    // Ulduzlu məktublar endpoint-i
+                    url = `/api/emails/starred/${userId}?page=0&size=50`;
+                } else {
+                    // Qovluq üzrə endpoint
+                    url = `/api/emails/folder/${userId}?folder=${currentView}&page=0&size=50`;
+                }
+
+                const res = await fetch(url);
+                if (!res.ok) {
+                    throw new Error(`Xəta: ${res.statusText}`);
+                }
+                const data = await res.json();
+                cachedEmails = data.content || [];
+                renderEmails(cachedEmails);
+            } catch (err) {
+                container.innerHTML = `<div class="empty-state"><p style="color: #d93025;">Məlumat yüklənərkən xəta baş verdi: ${err.message}</p></div>`;
+            }
+        }
+
+        // Render emails list
+        function renderEmails(emails) {
+            const container = document.getElementById('emailsListContainer');
+            if (!emails || emails.length === 0) {
+                let emptyMsg = 'Məktub yoxdur';
+                let icon = 'inbox';
+                if (currentView === 'STARRED') {
+                    emptyMsg = 'Ulduzlu məktub yoxdur. Vacib məktubları ulduzla işarələyərək burada görə bilərsiniz.';
+                    icon = 'star_border';
+                }
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span class="material-icons">${icon}</span>
+                        <p>${emptyMsg}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = emails.map(email => {
+                const isStarred = email.isStarred === true;
+                const starClass = isStarred ? 'starred' : '';
+                const starIcon = isStarred ? 'star' : 'star_border';
+                const formattedDate = email.createdAt ? new Date(email.createdAt).toLocaleDateString() : '';
+
+                return `
+                    <div class="email-row ${email.isRead ? '' : 'unread'}" onclick="openEmailDetail(${email.id})">
+                        <span class="material-icons star-icon ${starClass}" onclick="event.stopPropagation(); toggleStar(${email.id})">
+                            ${starIcon}
+                        </span>
+                        <div class="email-sender">${escapeHtml(email.senderName || email.senderEmail || '(Naməlum)')}</div>
+                        <div class="email-snippet">
+                            <span class="email-subject">${escapeHtml(email.subject || '(Mövzusuz)')}</span>
+                            <span class="email-body-preview">- ${escapeHtml(email.body || '')}</span>
+                        </div>
+                        <div class="email-date">${formattedDate}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Toggle Star
+        async function toggleStar(emailId) {
+            try {
+                const res = await fetch(`/api/emails/${emailId}/toggle-star`, { method: 'PATCH' });
+                if (res.ok) {
+                    loadCurrentView();
+                }
+            } catch (e) {
+                console.error('Ulduz dəyişdirilərkən xəta:', e);
+            }
+        }
+
+        // Sidebar count summary
+        async function loadSidebarSummary(userId) {
+            try {
+                const res = await fetch(`/api/emails/sidebar-summary/${userId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('badge-inbox').textContent = data.unreadInboxCount || 0;
+                    document.getElementById('badge-starred').textContent = data.starredCount || 0;
+                    document.getElementById('badge-sent').textContent = data.sentCount || 0;
+                    document.getElementById('badge-draft').textContent = data.draftCount || 0;
+                    document.getElementById('badge-trash').textContent = data.trashCount || 0;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // View single email
+        async function openEmailDetail(emailId) {
+            try {
+                const res = await fetch(`/api/emails/message/${emailId}`);
+                if (!res.ok) throw new Error('Məktub tapılmadı');
+                const email = await res.json();
+
+                document.getElementById('emailsListContainer').style.display = 'none';
+                const detailView = document.getElementById('emailDetailView');
+                detailView.style.display = 'flex';
+
+                document.getElementById('detailSubject').textContent = email.subject || '(Mövzusuz)';
+                document.getElementById('detailSender').textContent = `${email.senderName || ''} <${email.senderEmail || ''}>`;
+                document.getElementById('detailRecipient').textContent = `${email.recipientName || ''} <${email.recipientEmail || ''}>`;
+                document.getElementById('detailDate').textContent = email.createdAt ? new Date(email.createdAt).toLocaleString() : '';
+                document.getElementById('detailBody').textContent = email.body || '';
+
+                const starIcon = document.getElementById('detailStarIcon');
+                if (email.isStarred) {
+                    starIcon.classList.add('starred');
+                    starIcon.textContent = 'star';
+                } else {
+                    starIcon.classList.remove('starred');
+                    starIcon.textContent = 'star_border';
+                }
+                starIcon.onclick = async () => {
+                    await toggleStar(email.id);
+                    openEmailDetail(email.id);
+                };
+            } catch (err) {
+                alert('Məktub açılarkən xəta: ' + err.message);
+            }
+        }
+
+        function backToList() {
+            document.getElementById('emailsListContainer').style.display = 'block';
+            document.getElementById('emailDetailView').style.display = 'none';
+        }
+
+        // Compose modal logic
+        function openComposeModal() {
+            document.getElementById('composeModal').classList.add('active');
+        }
+
+        function closeComposeModal() {
+            document.getElementById('composeModal').classList.remove('active');
+        }
+
+        async function sendEmail() {
+            const userId = getUserId();
+            const recipientEmail = document.getElementById('composeRecipient').value;
+            const subject = document.getElementById('composeSubject').value;
+            const body = document.getElementById('composeBody').value;
+
+            if (!recipientEmail) {
+                alert('Zəhmət olmasa alıcının elektron poçt ünvanını qeyd edin.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/emails/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        senderId: userId,
+                        recipientEmail: recipientEmail,
+                        subject: subject,
+                        body: body
+                    })
+                });
+
+                if (res.ok) {
+                    alert('Məktub uğurla göndərildi!');
+                    closeComposeModal();
+                    document.getElementById('composeRecipient').value = '';
+                    document.getElementById('composeSubject').value = '';
+                    document.getElementById('composeBody').value = '';
+                    loadCurrentView();
+                } else {
+                    const text = await res.text();
+                    alert('Xəta baş verdi: ' + text);
+                }
+            } catch (err) {
+                alert('Xəta: ' + err.message);
+            }
+        }
+
+        async function saveDraft() {
+            const userId = getUserId();
+            const recipientEmail = document.getElementById('composeRecipient').value;
+            const subject = document.getElementById('composeSubject').value;
+            const body = document.getElementById('composeBody').value;
+
+            try {
+                const res = await fetch('/api/emails/draft', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: userId,
+                        recipientEmail: recipientEmail,
+                        subject: subject,
+                        body: body
+                    })
+                });
+
+                if (res.ok) {
+                    alert('Qaralama saxlanıldı!');
+                    closeComposeModal();
+                    loadCurrentView();
+                } else {
+                    const text = await res.text();
+                    alert('Xəta: ' + text);
+                }
+            } catch (err) {
+                alert('Xəta: ' + err.message);
+            }
+        }
+
+        // Search filtering
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase();
+            const filtered = cachedEmails.filter(m => 
+                (m.subject && m.subject.toLowerCase().includes(q)) ||
+                (m.senderName && m.senderName.toLowerCase().includes(q)) ||
+                (m.body && m.body.toLowerCase().includes(q))
+            );
+            renderEmails(filtered);
+        });
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return (text || '').replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Initial Load
+        loadCurrentView();
+    </script>
+</body>
+</html>

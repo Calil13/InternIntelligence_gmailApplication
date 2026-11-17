@@ -1,9 +1,7 @@
 package org.example.gmailapplication.services;
 
 import lombok.RequiredArgsConstructor;
-import org.example.gmailapplication.dto.EmailDraftRequest;
-import org.example.gmailapplication.dto.EmailResponseDto;
-import org.example.gmailapplication.dto.EmailSendRequest;
+import org.example.gmailapplication.dto.*;
 import org.example.gmailapplication.entity.Email;
 import org.example.gmailapplication.entity.User;
 import org.example.gmailapplication.enums.EmailFolder;
@@ -11,9 +9,10 @@ import org.example.gmailapplication.exceptions.NotFoundException;
 import org.example.gmailapplication.mapper.EmailMapper;
 import org.example.gmailapplication.repository.EmailRepository;
 import org.example.gmailapplication.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -111,5 +110,54 @@ public class EmailService {
                 .orElseThrow(() -> new NotFoundException("Email not found!"));
 
         return emailMapper.mapToDto(email);
+    }
+
+    public Page<EmailsListResponseDto> getEmailsList(Long userId, Pageable pageable) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found!"));
+
+        Page<Email> emails = emailRepository.findByUserId(userId, pageable);
+
+        return emails.map(emailMapper::mapToEmailsListDto);
+    }
+
+    public Page<EmailsListResponseDto> getStarredEmails(Long userId, Pageable pageable) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found: ID=" + userId));
+
+        Page<Email> starredEmails = emailRepository.findByUserIdAndIsStarredTrue(userId, pageable);
+        return starredEmails.map(emailMapper::mapToEmailsListDto);
+    }
+
+    public Page<EmailsListResponseDto> getEmailsByFolder(Long userId, EmailFolder folder, Pageable pageable) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found: ID=" + userId));
+
+        Page<Email> folderEmails = emailRepository.findByUserIdAndFolder(userId, folder, pageable);
+        return folderEmails.map(emailMapper::mapToEmailsListDto);
+    }
+
+    @Transactional
+    public boolean toggleStar(Long emailId) {
+        Email email = emailRepository.findById(emailId)
+                .orElseThrow(() -> new NotFoundException("Email not found: ID=" + emailId));
+
+        boolean newStarred = email.getIsStarred() == null || !email.getIsStarred();
+        email.setIsStarred(newStarred);
+        emailRepository.save(email);
+        return newStarred;
+    }
+
+    public SidebarSummaryDto getSidebarSummary(Long userId) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found: ID=" + userId));
+
+        return SidebarSummaryDto.builder()
+                .unreadInboxCount(emailRepository.countByUserIdAndFolderAndIsReadFalse(userId, EmailFolder.INBOX))
+                .starredCount(emailRepository.countByUserIdAndIsStarredTrue(userId))
+                .sentCount(emailRepository.countByUserIdAndFolder(userId, EmailFolder.SENT))
+                .draftCount(emailRepository.countByUserIdAndFolder(userId, EmailFolder.DRAFT))
+                .trashCount(emailRepository.countByUserIdAndFolder(userId, EmailFolder.TRASH))
+                .build();
     }
 }
