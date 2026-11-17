@@ -31,23 +31,13 @@ public class EmailController {
         return emailService.getEmailMessage(emailId);
     }
 
-    @GetMapping("/emails-list/{userId}")
-    public Page<EmailsListResponseDto> getEmailsList(@PathVariable Long userId, @ParameterObject Pageable pageable) {
-        return emailService.getEmailsList(userId, pageable);
-    }
-
     @GetMapping("/starred/{userId}")
-    public Page<EmailsListResponseDto> getStarredEmails(
-            @PathVariable Long userId,
-            @ParameterObject Pageable pageable) {
+    public Page<EmailsListResponseDto> getStarredEmails(@PathVariable Long userId, @ParameterObject Pageable pageable) {
         return emailService.getStarredEmails(userId, pageable);
     }
 
     @GetMapping("/folder/{userId}")
-    public Page<EmailsListResponseDto> getEmailsByFolder(
-            @PathVariable Long userId,
-            @RequestParam EmailFolder folder,
-            @ParameterObject Pageable pageable) {
+    public Page<EmailsListResponseDto> getEmailsByFolder(@PathVariable Long userId, @RequestParam EmailFolder folder, @ParameterObject Pageable pageable) {
         return emailService.getEmailsByFolder(userId, folder, pageable);
     }
 

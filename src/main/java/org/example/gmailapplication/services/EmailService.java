@@ -112,15 +112,6 @@ public class EmailService {
         return emailMapper.mapToDto(email);
     }
 
-    public Page<EmailsListResponseDto> getEmailsList(Long userId, Pageable pageable) {
-        userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found!"));
-
-        Page<Email> emails = emailRepository.findByUserId(userId, pageable);
-
-        return emails.map(emailMapper::mapToEmailsListDto);
-    }
-
     public Page<EmailsListResponseDto> getStarredEmails(Long userId, Pageable pageable) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found: ID=" + userId));
